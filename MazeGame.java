@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.GraphicsConfiguration;
+import java.awt.TextArea;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
@@ -55,6 +56,13 @@ public class MazeGame extends JFrame implements KeyListener {
         GraphicsConfiguration gc = SimpleUniverse.getPreferredConfiguration();
         c3d = new Canvas3D(gc);
         cp.add(c3d, BorderLayout.CENTER);
+        // add game Instructions
+        TextArea ta = new TextArea("",3,30,TextArea.SCROLLBARS_NONE);
+        ta.setText("UP and DOWN arrows to move forward and backward\n");
+        ta.append("LEFT and RIGHT arrows to move left and right\n");
+        ta.append("Drag mouse to look around");
+        ta.setEditable(false);
+        add(ta, BorderLayout.SOUTH);
         su = new SimpleUniverse(c3d);
 //        su.getViewingPlatform().setNominalViewingTransform();
         
@@ -69,25 +77,6 @@ public class MazeGame extends JFrame implements KeyListener {
         bg.compile();
         su.addBranchGraph(bg);
     }
-    
-	private BranchGroup createView(Point3d eye, Point3d center, Vector3d vup) {
-		View view = new View();
-//		view.setProjectionPolicy(View.PARALLEL_PROJECTION);
-		ViewPlatform vp = new ViewPlatform();
-		view.addCanvas3D(c3d);
-		view.attachViewPlatform(vp);
-		view.setPhysicalBody (new PhysicalBody());
-		view.setPhysicalEnvironment(new PhysicalEnvironment ()); 
-		Transform3D trans = new Transform3D(); 
-		trans.lookAt(eye, center, vup);
-		trans.invert(); 
-		TransformGroup tg = new TransformGroup(trans);
-		tg.addChild (vp);
-		BranchGroup bgView = new BranchGroup();
-		bgView.addChild(tg); 
-		
-		return bgView;
-	}
 	
 	private void customizeView(Point3d eye, Point3d center, Vector3d vup) {
 	    Transform3D trans = new Transform3D();
@@ -126,7 +115,7 @@ public class MazeGame extends JFrame implements KeyListener {
 //        rotator.setSchedulingBounds(bounds);
 //        spin.addChild(rotator);
         
-        // allow user to look arounf
+        // allow user to look around
         orbit = new OrbitBehavior(c3d);
         System.out.println(orbit.getTranslateEnable());
         orbit.setTranslateEnable(false);
@@ -204,22 +193,40 @@ public class MazeGame extends JFrame implements KeyListener {
 
         // Extract the translation vector (position)
         Vector3d translation = new Vector3d();
+        Vector3d rotation = new Vector3d();
+        
         currentTransform.get(translation);
-
+        currentTransform.get(rotation);
+        
+        Vector3d forward = new Vector3d(0.0, 0.0, -1.0); // Initially pointing along the negative z-axis
+        currentTransform.transform(forward);
+        
         // Convert to Point3d
         Point3d cameraPosition = new Point3d(translation.x, translation.y, translation.z);
-        System.out.println("new Camera Position: " + cameraPosition);
+        Point3d cameraOrientation = new Point3d(forward.x, forward.y, forward.z);
     	
     	switch(key) {
     	case KeyEvent.VK_UP:
+    		// change z position (forward)
     		cameraPosition.z += 0.5;
-    		customizeView(cameraPosition, new Point3d(0,0,1000), new Vector3d(0,1,0));
+    		// I added cameraPosition to the "look" so we are looking in the correct x direction when we move left or right
+    		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
     		break;
     	case KeyEvent.VK_DOWN:
     		cameraPosition.z -= 0.5;
-    		customizeView(cameraPosition, new Point3d(0,0,1000), new Vector3d(0,1,0));
+    		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
+    		break;
+    	case KeyEvent.VK_RIGHT:
+    		cameraPosition.x -= 0.5;
+    		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
+    		break;
+    	case KeyEvent.VK_LEFT:
+    		cameraPosition.x += 0.5;
+    		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
     		break;
     	}
+    	System.out.println("new Camera Position: " + cameraPosition);
+    	System.out.println("new Camera orientation: " + cameraOrientation);
     	
         orbit.setRotationCenter(cameraPosition);
 
