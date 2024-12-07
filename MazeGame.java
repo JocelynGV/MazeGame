@@ -7,6 +7,7 @@ import java.awt.GraphicsConfiguration;
 import java.awt.TextArea;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.net.URL;
 
 import javax.media.j3d.Alpha;
 import javax.media.j3d.Appearance;
@@ -15,12 +16,15 @@ import javax.media.j3d.BoundingSphere;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.Geometry;
+import javax.media.j3d.ImageComponent2D;
 import javax.media.j3d.Material;
 import javax.media.j3d.PhysicalBody;
 import javax.media.j3d.PhysicalEnvironment;
 import javax.media.j3d.PointLight;
 import javax.media.j3d.PolygonAttributes;
 import javax.media.j3d.Shape3D;
+import javax.media.j3d.Texture;
+import javax.media.j3d.Texture2D;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.media.j3d.View;
@@ -29,11 +33,13 @@ import javax.swing.JFrame;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Point3f;
+import javax.vecmath.TexCoord2f;
 import javax.vecmath.Vector3d;
 
 import com.sun.j3d.utils.behaviors.vp.OrbitBehavior;
 import com.sun.j3d.utils.geometry.GeometryInfo;
 import com.sun.j3d.utils.geometry.NormalGenerator;
+import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 
 public class MazeGame extends JFrame implements KeyListener {
@@ -95,7 +101,7 @@ public class MazeGame extends JFrame implements KeyListener {
         spin.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         root.addChild(spin);
         // create floor 
-        Appearance floorAp = new Appearance();
+        Appearance floorAp = createFloorTextureAppearance();
         floorAp.setMaterial(new Material());
         PolygonAttributes pa = new PolygonAttributes();
         pa.setBackFaceNormalFlip(true);
@@ -166,23 +172,72 @@ public class MazeGame extends JFrame implements KeyListener {
         
         // indices
         int[] inds = {
-        		0, 1, 2, 3,
-        		0, 1, 5, 4,
-        		1, 5, 6, 2,
-        		2, 6, 7, 3,
-        		3, 7, 4, 0,
-        		4, 5, 6, 7
+        		0, 1, 2, 3, //bottom
+        		0, 1, 5, 4, // front face
+        		1, 5, 6, 2, // left
+        		2, 6, 7, 3, // back side
+        		3, 7, 4, 0, // right 
+        		4, 5, 6, 7 // top
         };
+        
+        // create texture mapping
+        TexCoord2f[] texCoords = new TexCoord2f[8];
+        // regular mapping
+        texCoords[0] = new TexCoord2f(0.0f, 0.0f); 
+        texCoords[1] = new TexCoord2f(1.0f, 0.0f);
+        texCoords[2] = new TexCoord2f(1.0f, 1.0f);
+        texCoords[3] = new TexCoord2f(0.0f, 1.0f);
+        // skinny mapping (doesnt really work currently i think)
+        texCoords[4] = new TexCoord2f(0.0f, 0.0f); 
+        texCoords[5] = new TexCoord2f(1.0f, 0.0f); 
+        texCoords[6] = new TexCoord2f(1.0f, 0.025f); 
+        texCoords[7] = new TexCoord2f(0.0f, 0.025f);   
+        
+        // map texture to correct side of shape (also not sure why its not working)
+        int[] texInds = {
+        		0, 1, 2, 3,
+        		4, 5, 6, 7,
+        	    4, 5, 6, 7,
+        	    4, 5, 6, 7,
+        	    4, 5, 6, 7,
+        	    0, 1, 2, 3
+        	};
         
         GeometryInfo gi = new GeometryInfo(GeometryInfo.QUAD_ARRAY);
         gi.setCoordinates(verts);
         gi.setCoordinateIndices(inds);
+        gi.setTextureCoordinateParams(1, 2);
+        gi.setTextureCoordinates(0, texCoords); 
+        gi.setTextureCoordinateIndices(0, texInds);
         NormalGenerator ng = new NormalGenerator();
         ng.generateNormals(gi);
         return gi.getGeometryArray();
 
 
     }
+    
+    Appearance createFloorTextureAppearance(){    
+        Appearance ap = new Appearance();
+        URL filename = 
+            getClass().getResource("cobblestone1.jpeg");
+        if (filename == null) { 
+        	System.out.println("Texture file not found!"); return ap; // Return an empty appearance to avoid further errors
+        }
+        TextureLoader loader = new TextureLoader(filename, this);
+        ImageComponent2D image = loader.getImage();
+        if(image == null) {
+          System.out.println("can't find texture file.");
+        }
+        System.out.println("Texture file found at: " + filename);
+        Texture2D texture = new Texture2D(Texture.BASE_LEVEL, Texture.RGBA,
+        image.getWidth(), image.getHeight());
+        texture.setImage(0, image);
+        texture.setEnable(true);
+        texture.setMagFilter(Texture.BASE_LEVEL_LINEAR);
+        texture.setMinFilter(Texture.BASE_LEVEL_LINEAR);
+        ap.setTexture(texture);
+        return ap;
+      }
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -217,11 +272,11 @@ public class MazeGame extends JFrame implements KeyListener {
     		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
     		break;
     	case KeyEvent.VK_RIGHT:
-    		cameraPosition.x -= 0.5;
+    		cameraPosition.x -= 0.15;
     		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
     		break;
     	case KeyEvent.VK_LEFT:
-    		cameraPosition.x += 0.5;
+    		cameraPosition.x += 0.15;
     		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
     		break;
     	}
