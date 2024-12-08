@@ -6,7 +6,11 @@ import java.awt.Container;
 import java.awt.GraphicsConfiguration;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
 import javax.media.j3d.Alpha;
 import javax.media.j3d.Appearance;
 import javax.media.j3d.Background;
@@ -14,12 +18,14 @@ import javax.media.j3d.BoundingSphere;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.Geometry;
+import javax.media.j3d.ImageComponent2D;
 import javax.media.j3d.Material;
 import javax.media.j3d.PhysicalBody;
 import javax.media.j3d.PhysicalEnvironment;
 import javax.media.j3d.PointLight;
 import javax.media.j3d.PolygonAttributes;
 import javax.media.j3d.Shape3D;
+import javax.media.j3d.Texture;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.media.j3d.View;
@@ -157,7 +163,16 @@ public class MazeGame extends JFrame implements KeyListener {
         light.setInfluencingBounds(bounds);
         root.addChild(light);
         //background
-        Background background = new Background(1.0f, 1.0f, 1.0f);
+        Background background = new Background();
+        BufferedImage bgImg = null;
+		try {
+			bgImg = ImageIO.read(new File("src/NevadaMountains.jpg"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        background.setImage(new ImageComponent2D(ImageComponent2D.FORMAT_RGB, bgImg));
+        background.setImageScaleMode(Background.SCALE_FIT_ALL);
         background.setApplicationBounds(bounds);
         root.addChild(background);
         return root;
