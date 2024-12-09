@@ -7,8 +7,14 @@ import java.awt.GraphicsConfiguration;
 import java.awt.TextArea;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 
+import javax.imageio.ImageIO;
 import javax.media.j3d.Alpha;
 import javax.media.j3d.Appearance;
 import javax.media.j3d.Background;
@@ -18,8 +24,6 @@ import javax.media.j3d.Canvas3D;
 import javax.media.j3d.Geometry;
 import javax.media.j3d.ImageComponent2D;
 import javax.media.j3d.Material;
-import javax.media.j3d.PhysicalBody;
-import javax.media.j3d.PhysicalEnvironment;
 import javax.media.j3d.PointLight;
 import javax.media.j3d.PolygonAttributes;
 import javax.media.j3d.Shape3D;
@@ -28,7 +32,6 @@ import javax.media.j3d.Texture2D;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.media.j3d.View;
-import javax.media.j3d.ViewPlatform;
 import javax.swing.JFrame;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
@@ -47,6 +50,31 @@ public class MazeGame extends JFrame implements KeyListener {
 	SimpleUniverse su;
 	private TransformGroup viewTransformGroup;
 	OrbitBehavior orbit;
+	
+	float w = 20f, y = -0.75f, h = 0.1f;
+	
+	 public static final int[][] mapLayout = {
+	            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+	            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	            {1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1},
+	            {1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1},
+	            {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1},
+	            {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1},
+	            {1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1},
+	            {1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1},
+	            {1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1},
+	            {1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1},
+	            {1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1},
+	            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1},
+	            {1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1},
+	            {1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	            {1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+	            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9},
+	            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+	    };
+	
+	int currCol = 1, currRow = 1;
+
 	
     public static void main(String[] args) {
         System.setProperty("sun.awt.noerasebackground", "true");
@@ -73,7 +101,7 @@ public class MazeGame extends JFrame implements KeyListener {
 //        su.getViewingPlatform().setNominalViewingTransform();
         
         // customize view
-    	customizeView(new Point3d (0,0,-3.5), new Point3d (0,0,0), new Vector3d (0,1,0));
+    	customizeView(new Point3d (17.0,0,-17.0), new Point3d (7,0,1000), new Vector3d (0,1,0));
         viewTransformGroup = su.getViewingPlatform().getViewPlatformTransform();
 
         c3d.addKeyListener(this);
@@ -82,7 +110,7 @@ public class MazeGame extends JFrame implements KeyListener {
         BranchGroup bg = createSceneGraph();
         bg.compile();
         su.addBranchGraph(bg);
-    }
+	}
 	
 	private void customizeView(Point3d eye, Point3d center, Vector3d vup) {
 	    Transform3D trans = new Transform3D();
@@ -110,10 +138,20 @@ public class MazeGame extends JFrame implements KeyListener {
         Shape3D shape = new Shape3D(createFloor(), floorAp);
         //transformation
         Transform3D tr = new Transform3D();
-        tr.setScale(0.4);
+//        tr.setScale(0.4);
         TransformGroup tg = new TransformGroup(tr);
         spin.addChild(tg);
         tg.addChild(shape);
+        
+        // Create the maze
+        Appearance mazeAp = createWallAppearance(); 
+        Shape3D maze = new Shape3D(createMaze(), mazeAp);
+        Transform3D mazeTransform = new Transform3D();
+//        mazeTransform.setScale(0.4); // Ensure the maze scales along with the floor
+        TransformGroup mazeGroup = new TransformGroup(mazeTransform);
+        mazeGroup.addChild(maze);
+        spin.addChild(mazeGroup);
+        
         Alpha alpha = new Alpha(-1, 10000);
 //        RotationInterpolator rotator = new RotationInterpolator(alpha, spin);
         BoundingSphere bounds = new BoundingSphere();
@@ -145,6 +183,7 @@ public class MazeGame extends JFrame implements KeyListener {
         
         orbit.setSchedulingBounds(new BoundingSphere());
         su.getViewingPlatform().setViewPlatformBehavior(orbit);
+        
         //light
         PointLight light = new PointLight(new Color3f(Color.white),
                 new Point3f(0.5f,0.5f,1f),
@@ -152,23 +191,31 @@ public class MazeGame extends JFrame implements KeyListener {
         light.setInfluencingBounds(bounds);
         root.addChild(light);
         //background
-        Background background = new Background(1.0f, 1.0f, 1.0f);
+        Background background = new Background();
+        BufferedImage bgImg = null;
+		try {
+			bgImg = ImageIO.read(new File("src/NevadaMountains.jpg"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        background.setImage(new ImageComponent2D(ImageComponent2D.FORMAT_RGB, bgImg));
+        background.setImageScaleMode(Background.SCALE_FIT_ALL);
         background.setApplicationBounds(bounds);
         root.addChild(background);
         return root;
     }
 
     private Geometry createFloor() {
-    	float w = 4f, z = -0.5f, h = 0.1f;
         Point3f[] verts = new Point3f[8];
-        verts[0] = new Point3f(w,z,w);
-        verts[1] = new Point3f(-w,z,w);
-        verts[2] = new Point3f(-w,z,-w);
-        verts[3] = new Point3f(w,z,-w);
-        verts[4] = new Point3f(w,z+h,w);
-        verts[5] = new Point3f(-w,z+h,w);
-        verts[6] = new Point3f(-w,z+h,-w);
-        verts[7] = new Point3f(w,z+h,-w);
+        verts[0] = new Point3f(w,y,w);
+        verts[1] = new Point3f(-w,y,w);
+        verts[2] = new Point3f(-w,y,-w);
+        verts[3] = new Point3f(w,y,-w);
+        verts[4] = new Point3f(w,y+h,w);
+        verts[5] = new Point3f(-w,y+h,w);
+        verts[6] = new Point3f(-w,y+h,-w);
+        verts[7] = new Point3f(w,y+h,-w);
         
         // indices
         int[] inds = {
@@ -201,7 +248,7 @@ public class MazeGame extends JFrame implements KeyListener {
         	    4, 5, 6, 7,
         	    4, 5, 6, 7,
         	    0, 1, 2, 3
-        	};
+        };
         
         GeometryInfo gi = new GeometryInfo(GeometryInfo.QUAD_ARRAY);
         gi.setCoordinates(verts);
@@ -237,7 +284,110 @@ public class MazeGame extends JFrame implements KeyListener {
         texture.setMinFilter(Texture.BASE_LEVEL_LINEAR);
         ap.setTexture(texture);
         return ap;
-      }
+    }
+    
+    public Geometry createMaze() {
+    	float baseY = y+h;
+    	float cellSize = w*2/mapLayout[0].length;
+    	float mazeX = -w;
+    	float mazeZ = -w;
+    	float mazeH = 1.5f;
+    	
+    	int wallCount = 0;
+    	
+    	for (int i = 0; i < mapLayout.length; i++) {
+    		for (int j = 0; j < mapLayout[0].length; j++) {
+    			if (mapLayout[i][j] == 1) {
+    				wallCount++;
+    			}
+    		}
+    	}
+    	
+        Point3f[] verts = new Point3f[wallCount * 8];
+        int count = 0;
+        for (int row = 0; row < mapLayout.length; row++) {
+    		for (int col = 0; col < mapLayout[row].length; col++) {
+    			if (mapLayout[row][col] == 1) {
+//    				verts[count++] = new Point3f(mazeX, baseY, mazeZ); 
+//    		        verts[count++] = new Point3f(mazeX + mazeW, baseY, mazeZ);
+//    		        verts[count++] = new Point3f(mazeX + mazeW, baseY, mazeZ + mazeW);
+//    		        verts[count++] = new Point3f(mazeX, baseY, mazeZ + mazeW);
+//    		        verts[count++] = new Point3f(mazeX, baseY + mazeH, mazeZ); 
+//    		        verts[count++] = new Point3f(mazeX + mazeW, baseY + mazeH, mazeZ);
+//    		        verts[count++] = new Point3f(mazeX + mazeW, baseY + mazeH, mazeZ + mazeW);
+//    		        verts[count++] = new Point3f(mazeX, baseY + mazeH, mazeZ + mazeW);
+    		        
+    				verts[count++] = new Point3f(mazeX + cellSize, baseY, mazeZ); //0
+    		        verts[count++] = new Point3f(mazeX, baseY, mazeZ);  //1
+    		        verts[count++] = new Point3f(mazeX, baseY, mazeZ + cellSize); //2
+    		        verts[count++] = new Point3f(mazeX + cellSize, baseY, mazeZ + cellSize); //3
+    		        verts[count++] = new Point3f(mazeX + cellSize, baseY + mazeH, mazeZ); //4
+    		        verts[count++] = new Point3f(mazeX, baseY + mazeH, mazeZ); //5
+    		        verts[count++] = new Point3f(mazeX, baseY + mazeH, mazeZ + cellSize); //6
+    		        verts[count++] = new Point3f(mazeX + cellSize, baseY + mazeH, mazeZ + cellSize); //7
+    			}
+    			mazeX += cellSize;
+    		}
+    		mazeX = -w;
+    		mazeZ += cellSize;
+    	}
+        
+        System.out.println(Arrays.toString(verts));
+        
+        // indices
+//        int[] inds = {
+//        		0, 1, 2, 3, //bottom
+//        		0, 1, 5, 4, // front face
+//        		1, 5, 6, 2, // left
+//        		2, 6, 7, 3, // back side
+//        		3, 7, 4, 0, // right 
+//        		4, 5, 6, 7 // top
+//        };
+        
+        ArrayList<Integer> indsList = new ArrayList<>();
+        count = 0;
+        for (int i = 0; i < wallCount; i++) {
+    		indsList.addAll(Arrays.asList(count, count + 1, count + 2, count + 3)); 
+    		indsList.addAll(Arrays.asList(count, count + 1, count + 5, count + 4));
+    		indsList.addAll(Arrays.asList(count + 1, count + 5, count + 6, count + 2));
+    		indsList.addAll(Arrays.asList(count + 2, count + 6, count + 7, count + 3));
+    		indsList.addAll(Arrays.asList(count + 3, count + 7, count + 4, count));
+    		indsList.addAll(Arrays.asList(count + 4, count + 5, count + 6, count + 7));
+    		
+    		count += 8;
+    	}
+        System.out.println(indsList.size());
+                
+        int[] inds = new int[indsList.size()];
+	    int i = 0;
+	    for (Integer num : indsList) {
+	    	inds[i++] = num;
+	    }
+	    
+	    System.out.println(Arrays.toString(inds));
+        
+        GeometryInfo gi = new GeometryInfo(GeometryInfo.QUAD_ARRAY);
+        gi.setCoordinates(verts);
+        gi.setCoordinateIndices(inds);
+//        gi.setTextureCoordinateParams(1, 2);
+//        gi.setTextureCoordinates(0, texCoords); 
+//        gi.setTextureCoordinateIndices(0, texInds);
+        NormalGenerator ng = new NormalGenerator();
+        ng.generateNormals(gi);
+        return gi.getGeometryArray();
+    }
+    
+    private Appearance createWallAppearance() {
+        Appearance appearance = new Appearance();
+
+
+        // Configure polygon attributes to render both sides
+        PolygonAttributes polyAttr = new PolygonAttributes();
+        polyAttr.setCullFace(PolygonAttributes.CULL_NONE); // Render both sides
+        appearance.setPolygonAttributes(polyAttr);
+
+        return appearance;
+    }
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -255,7 +405,7 @@ public class MazeGame extends JFrame implements KeyListener {
         
         Vector3d forward = new Vector3d(0.0, 0.0, -1.0); // Initially pointing along the negative z-axis
         currentTransform.transform(forward);
-        
+
         // Convert to Point3d
         Point3d cameraPosition = new Point3d(translation.x, translation.y, translation.z);
         Point3d cameraOrientation = new Point3d(forward.x, forward.y, forward.z);
@@ -264,24 +414,28 @@ public class MazeGame extends JFrame implements KeyListener {
     	case KeyEvent.VK_UP:
     		// change z position (forward)
     		cameraPosition.z += 0.5;
-    		// I added cameraPosition to the "look" so we are looking in the correct x direction when we move left or right
-    		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
     		break;
     	case KeyEvent.VK_DOWN:
     		cameraPosition.z -= 0.5;
-    		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
     		break;
     	case KeyEvent.VK_RIGHT:
-    		cameraPosition.x -= 0.15;
-    		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
+    		cameraPosition.x -= 0.5;
     		break;
     	case KeyEvent.VK_LEFT:
-    		cameraPosition.x += 0.15;
-    		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
+    		cameraPosition.x += 0.5;
     		break;
     	}
-    	System.out.println("new Camera Position: " + cameraPosition);
-    	System.out.println("new Camera orientation: " + cameraOrientation);
+
+    	// I added cameraPosition to the "look" so we are looking in the correct x direction when we move left or right
+//    	customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
+    	
+    	if (isWalkable(cameraPosition.x, cameraPosition.z)) {
+    		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
+    	}
+
+    	
+//    	System.out.println("new Camera Position: " + cameraPosition);
+//    	System.out.println("new Camera orientation: " + cameraOrientation);
     	
         orbit.setRotationCenter(cameraPosition);
 
@@ -299,4 +453,28 @@ public class MazeGame extends JFrame implements KeyListener {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	// collision detection
+	private boolean isWalkable(double x, double z) {
+	    // calculate  grid size
+	    double cellSize = (w * 2) / mapLayout[0].length;
+
+	    // Translate world coordinates to grid indices
+	    int col = (int) Math.floor((x + w) / cellSize);
+	    int row = (int) Math.floor((z + w) / cellSize);
+	    
+	    System.out.println("x " + x);
+	    System.out.println("z " + z);
+	    System.out.println("row " + row);
+	    System.out.println("col " + col);
+
+	    // Check bounds
+	    if (row < 0 || row >= mapLayout.length || col < 0 || col >= mapLayout[0].length) {
+	        return false;
+	    }
+
+	    // Return if the cell is walkable
+	    return mapLayout[row][col] == 0;
+	}
+
 }
