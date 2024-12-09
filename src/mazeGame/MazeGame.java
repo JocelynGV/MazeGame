@@ -35,11 +35,14 @@ import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Point3f;
 import javax.vecmath.Vector3d;
+import javax.media.j3d.Texture2D;
 
 import com.sun.j3d.utils.behaviors.vp.OrbitBehavior;
 import com.sun.j3d.utils.geometry.GeometryInfo;
 import com.sun.j3d.utils.geometry.NormalGenerator;
 import com.sun.j3d.utils.universe.SimpleUniverse;
+import com.sun.j3d.utils.geometry.Sphere;
+import com.sun.j3d.utils.image.TextureLoader;
 
 public class MazeGame extends JFrame implements KeyListener {
 	Canvas3D c3d;
@@ -132,14 +135,14 @@ public class MazeGame extends JFrame implements KeyListener {
 //        rotator.setSchedulingBounds(bounds);
 //        spin.addChild(rotator);
         
-        // allow user to look arounf
+        // allow user to look around
         orbit = new OrbitBehavior(c3d);
         System.out.println(orbit.getTranslateEnable());
         orbit.setTranslateEnable(false);
         System.out.println(orbit.getTranslateEnable());
         orbit.setZoomEnable(false);
-        orbit.setRotYFactor(0);
-        orbit.setRotXFactor(.5);
+        orbit.setRotYFactor(0.5);
+        orbit.setRotXFactor(0.5);
         
         Transform3D currentTransform = new Transform3D();
         su.getViewingPlatform().getViewPlatformTransform().getTransform(currentTransform);
@@ -164,18 +167,37 @@ public class MazeGame extends JFrame implements KeyListener {
         root.addChild(light);
         //background
         Background background = new Background();
+        background.setApplicationBounds(bounds);
+        background.setGeometry(bgBranch());
+        root.addChild(background);
+        return root;
+    }
+    
+    private BranchGroup bgBranch() {
+    	BranchGroup background = new BranchGroup();
+    	Appearance sphereAp = new Appearance();
         BufferedImage bgImg = null;
 		try {
-			bgImg = ImageIO.read(new File("src/NevadaMountains.jpg"));
+			bgImg = ImageIO.read(new File("src/FlowersMeadow.jpg"));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        background.setImage(new ImageComponent2D(ImageComponent2D.FORMAT_RGB, bgImg));
-        background.setImageScaleMode(Background.SCALE_FIT_ALL);
-        background.setApplicationBounds(bounds);
-        root.addChild(background);
-        return root;
+		TextureLoader txld = new TextureLoader(bgImg);
+		ImageComponent2D img2D = txld.getImage();
+		Texture2D tex = new Texture2D(Texture.BASE_LEVEL, Texture.RGBA, 
+				img2D.getWidth(), img2D.getHeight());
+		tex.setImage(0, img2D);
+		tex.setEnable(true);
+		tex.setMagFilter(Texture.BASE_LEVEL_LINEAR);
+		tex.setMinFilter(Texture.BASE_LEVEL_LINEAR);
+		sphereAp.setTexture(tex);
+    	Sphere skybox = new Sphere(1.0f, 
+    			Sphere.GENERATE_NORMALS_INWARD | 
+    			Sphere.GENERATE_TEXTURE_COORDS, 
+    			sphereAp);
+    	background.addChild(skybox);
+    	return background;
     }
 
     private Geometry createFloor() {
