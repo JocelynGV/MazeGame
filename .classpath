@@ -7,5 +7,7 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Java_3d"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Java3D"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/java3d"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
