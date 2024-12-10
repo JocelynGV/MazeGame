@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.GraphicsConfiguration;
+
 import java.awt.TextArea;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -39,11 +40,13 @@ import javax.vecmath.Point3f;
 import javax.vecmath.TexCoord2f;
 import javax.vecmath.Vector3d;
 
+
 import com.sun.j3d.utils.behaviors.vp.OrbitBehavior;
 import com.sun.j3d.utils.geometry.GeometryInfo;
 import com.sun.j3d.utils.geometry.NormalGenerator;
-import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.universe.SimpleUniverse;
+import com.sun.j3d.utils.geometry.Sphere;
+import com.sun.j3d.utils.image.TextureLoader;
 
 public class MazeGame extends JFrame implements KeyListener {
 	Canvas3D c3d;
@@ -51,6 +54,7 @@ public class MazeGame extends JFrame implements KeyListener {
 	private TransformGroup viewTransformGroup;
 	OrbitBehavior orbit;
 	
+
 	float w = 20f, y = -0.75f, h = 0.1f;
 	
 	 public static final int[][] mapLayout = {
@@ -90,6 +94,7 @@ public class MazeGame extends JFrame implements KeyListener {
         GraphicsConfiguration gc = SimpleUniverse.getPreferredConfiguration();
         c3d = new Canvas3D(gc);
         cp.add(c3d, BorderLayout.CENTER);
+
         // add game Instructions
         TextArea ta = new TextArea("",3,30,TextArea.SCROLLBARS_NONE);
         ta.setText("UP and DOWN arrows to move forward and backward\n");
@@ -97,11 +102,13 @@ public class MazeGame extends JFrame implements KeyListener {
         ta.append("Drag mouse to look around");
         ta.setEditable(false);
         add(ta, BorderLayout.SOUTH);
+
         su = new SimpleUniverse(c3d);
 //        su.getViewingPlatform().setNominalViewingTransform();
         
         // customize view
     	customizeView(new Point3d (17.0,0,-17.0), new Point3d (7,0,1000), new Vector3d (0,1,0));
+
         viewTransformGroup = su.getViewingPlatform().getViewPlatformTransform();
 
         c3d.addKeyListener(this);
@@ -129,6 +136,7 @@ public class MazeGame extends JFrame implements KeyListener {
         spin.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         root.addChild(spin);
         // create floor 
+
         Appearance floorAp = createFloorTextureAppearance();
         floorAp.setMaterial(new Material());
         PolygonAttributes pa = new PolygonAttributes();
@@ -138,6 +146,7 @@ public class MazeGame extends JFrame implements KeyListener {
         Shape3D shape = new Shape3D(createFloor(), floorAp);
         //transformation
         Transform3D tr = new Transform3D();
+
 //        tr.setScale(0.4);
         TransformGroup tg = new TransformGroup(tr);
         spin.addChild(tg);
@@ -167,6 +176,7 @@ public class MazeGame extends JFrame implements KeyListener {
         orbit.setZoomEnable(false);
         orbit.setRotYFactor(0);
         orbit.setRotXFactor(.5);
+
         
         Transform3D currentTransform = new Transform3D();
         su.getViewingPlatform().getViewPlatformTransform().getTransform(currentTransform);
@@ -183,7 +193,7 @@ public class MazeGame extends JFrame implements KeyListener {
         
         orbit.setSchedulingBounds(new BoundingSphere());
         su.getViewingPlatform().setViewPlatformBehavior(orbit);
-        
+
         //light
         PointLight light = new PointLight(new Color3f(Color.white),
                 new Point3f(0.5f,0.5f,1f),
@@ -192,20 +202,39 @@ public class MazeGame extends JFrame implements KeyListener {
         root.addChild(light);
         //background
         Background background = new Background();
+        background.setApplicationBounds(bounds);
+        background.setGeometry(bgBranch());
+        root.addChild(background);
+        return root;
+    }
+    
+    private BranchGroup bgBranch() {
+    	BranchGroup background = new BranchGroup();
+    	Appearance sphereAp = new Appearance();
         BufferedImage bgImg = null;
 		try {
-			bgImg = ImageIO.read(new File("src/NevadaMountains.jpg"));
+			bgImg = ImageIO.read(new File("src/FlowersMeadow.jpg"));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        background.setImage(new ImageComponent2D(ImageComponent2D.FORMAT_RGB, bgImg));
-        background.setImageScaleMode(Background.SCALE_FIT_ALL);
-        background.setApplicationBounds(bounds);
-        root.addChild(background);
-        return root;
+		TextureLoader txld = new TextureLoader(bgImg);
+		ImageComponent2D img2D = txld.getImage();
+		Texture2D tex = new Texture2D(Texture.BASE_LEVEL, Texture.RGBA, 
+				img2D.getWidth(), img2D.getHeight());
+		tex.setImage(0, img2D);
+		tex.setEnable(true);
+		tex.setMagFilter(Texture.BASE_LEVEL_LINEAR);
+		tex.setMinFilter(Texture.BASE_LEVEL_LINEAR);
+		sphereAp.setTexture(tex);
+    	Sphere skybox = new Sphere(1.0f, 
+    			Sphere.GENERATE_NORMALS_INWARD | 
+    			Sphere.GENERATE_TEXTURE_COORDS, 
+    			sphereAp);
+    	background.addChild(skybox);
+    	return background;
     }
-
+  
     private Geometry createFloor() {
         Point3f[] verts = new Point3f[8];
         verts[0] = new Point3f(w,y,w);
@@ -387,6 +416,7 @@ public class MazeGame extends JFrame implements KeyListener {
         appearance.setPolygonAttributes(polyAttr);
 
         return appearance;
+
     }
 
     @Override
@@ -398,6 +428,7 @@ public class MazeGame extends JFrame implements KeyListener {
 
         // Extract the translation vector (position)
         Vector3d translation = new Vector3d();
+
         Vector3d rotation = new Vector3d();
         
         currentTransform.get(translation);
@@ -436,9 +467,7 @@ public class MazeGame extends JFrame implements KeyListener {
     	
 //    	System.out.println("new Camera Position: " + cameraPosition);
 //    	System.out.println("new Camera orientation: " + cameraOrientation);
-    	
         orbit.setRotationCenter(cameraPosition);
-
     }
 
 	@Override
@@ -476,5 +505,4 @@ public class MazeGame extends JFrame implements KeyListener {
 	    // Return if the cell is walkable
 	    return mapLayout[row][col] == 0;
 	}
-
 }
