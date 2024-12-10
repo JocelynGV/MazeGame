@@ -24,6 +24,8 @@ import javax.media.j3d.Canvas3D;
 import javax.media.j3d.Geometry;
 import javax.media.j3d.ImageComponent2D;
 import javax.media.j3d.Material;
+import javax.media.j3d.PhysicalBody;
+import javax.media.j3d.PhysicalEnvironment;
 import javax.media.j3d.PointLight;
 import javax.media.j3d.PolygonAttributes;
 import javax.media.j3d.Shape3D;
@@ -32,50 +34,54 @@ import javax.media.j3d.Texture2D;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.media.j3d.View;
+import javax.media.j3d.ViewPlatform;
 import javax.swing.JFrame;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Point3f;
 import javax.vecmath.TexCoord2f;
 import javax.vecmath.Vector3d;
+import javax.media.j3d.Texture2D;
 
 import com.sun.j3d.utils.behaviors.vp.OrbitBehavior;
 import com.sun.j3d.utils.geometry.GeometryInfo;
 import com.sun.j3d.utils.geometry.NormalGenerator;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.universe.SimpleUniverse;
+import com.sun.j3d.utils.geometry.Sphere;
+import com.sun.j3d.utils.image.TextureLoader;
 
 public class MazeGame extends JFrame implements KeyListener {
-	Canvas3D c3d;
-	SimpleUniverse su;
-	private TransformGroup viewTransformGroup;
-	OrbitBehavior orbit;
-	
-	float w = 20f, y = -0.75f, h = 0.1f;
-	
-	 public static final int[][] mapLayout = {
-	            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-	            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	            {1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1},
-	            {1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1},
-	            {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1},
-	            {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1},
-	            {1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1},
-	            {1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1},
-	            {1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1},
-	            {1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1},
-	            {1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1},
-	            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1},
-	            {1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1},
-	            {1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	            {1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-	            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9},
-	            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-	    };
-	
-	int currCol = 1, currRow = 1;
+    Canvas3D c3d;
+    SimpleUniverse su;
+    private TransformGroup viewTransformGroup;
+    OrbitBehavior orbit;
+    
+    float w = 20f, y = -0.75f, h = 0.1f;
+    
+     public static final int[][] mapLayout = {
+                {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+                {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                {1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1},
+                {1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1},
+                {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1},
+                {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1},
+                {1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1},
+                {1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1},
+                {1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1},
+                {1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1},
+                {1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1},
+                {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1},
+                {1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1},
+                {1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                {1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+                {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9},
+                {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+        };
+    
+    int currCol = 1, currRow = 1;
 
-	
+    
     public static void main(String[] args) {
         System.setProperty("sun.awt.noerasebackground", "true");
         JFrame frame = new MazeGame();
@@ -101,27 +107,46 @@ public class MazeGame extends JFrame implements KeyListener {
 //        su.getViewingPlatform().setNominalViewingTransform();
         
         // customize view
-    	customizeView(new Point3d (17.0,0,-17.0), new Point3d (7,0,1000), new Vector3d (0,1,0));
+        customizeView(new Point3d (17.0,0,-17.0), new Point3d (7,0,1000), new Vector3d (0,1,0));
         viewTransformGroup = su.getViewingPlatform().getViewPlatformTransform();
 
         c3d.addKeyListener(this);
         this.addKeyListener(this);
-    	
+        
         BranchGroup bg = createSceneGraph();
         bg.compile();
         su.addBranchGraph(bg);
-	}
-	
-	private void customizeView(Point3d eye, Point3d center, Vector3d vup) {
-	    Transform3D trans = new Transform3D();
-	    trans.lookAt(eye, center, vup);
-	    trans.invert();
+    }
+    
+    private BranchGroup createView(Point3d eye, Point3d center, Vector3d vup) {
+        View view = new View();
+//      view.setProjectionPolicy(View.PARALLEL_PROJECTION);
+        ViewPlatform vp = new ViewPlatform();
+        view.addCanvas3D(c3d);
+        view.attachViewPlatform(vp);
+        view.setPhysicalBody (new PhysicalBody());
+        view.setPhysicalEnvironment(new PhysicalEnvironment ()); 
+        Transform3D trans = new Transform3D(); 
+        trans.lookAt(eye, center, vup);
+        trans.invert(); 
+        TransformGroup tg = new TransformGroup(trans);
+        tg.addChild (vp);
+        BranchGroup bgView = new BranchGroup();
+        bgView.addChild(tg); 
+        
+        return bgView;
+    }
+    
+    private void customizeView(Point3d eye, Point3d center, Vector3d vup) {
+        Transform3D trans = new Transform3D();
+        trans.lookAt(eye, center, vup);
+        trans.invert();
 
-	    su.getViewingPlatform().getViewPlatformTransform().setTransform(trans);
+        su.getViewingPlatform().getViewPlatformTransform().setTransform(trans);
 
-	    View view = su.getViewer().getView();
-//	    view.setBackClipDistance(100.0); 
-	}
+        View view = su.getViewer().getView();
+//      view.setBackClipDistance(100.0); 
+    }
 
     public BranchGroup createSceneGraph() {
         BranchGroup root = new BranchGroup();
@@ -165,8 +190,8 @@ public class MazeGame extends JFrame implements KeyListener {
         orbit.setTranslateEnable(false);
         System.out.println(orbit.getTranslateEnable());
         orbit.setZoomEnable(false);
-        orbit.setRotYFactor(0);
-        orbit.setRotXFactor(.5);
+        orbit.setRotYFactor(0.0);
+        orbit.setRotXFactor(0.5);
         
         Transform3D currentTransform = new Transform3D();
         su.getViewingPlatform().getViewPlatformTransform().getTransform(currentTransform);
@@ -183,7 +208,6 @@ public class MazeGame extends JFrame implements KeyListener {
         
         orbit.setSchedulingBounds(new BoundingSphere());
         su.getViewingPlatform().setViewPlatformBehavior(orbit);
-        
         //light
         PointLight light = new PointLight(new Color3f(Color.white),
                 new Point3f(0.5f,0.5f,1f),
@@ -192,18 +216,37 @@ public class MazeGame extends JFrame implements KeyListener {
         root.addChild(light);
         //background
         Background background = new Background();
-        BufferedImage bgImg = null;
-		try {
-			bgImg = ImageIO.read(new File("src/NevadaMountains.jpg"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        background.setImage(new ImageComponent2D(ImageComponent2D.FORMAT_RGB, bgImg));
-        background.setImageScaleMode(Background.SCALE_FIT_ALL);
         background.setApplicationBounds(bounds);
+        background.setGeometry(bgBranch());
         root.addChild(background);
         return root;
+    }
+    
+    private BranchGroup bgBranch() {
+        BranchGroup background = new BranchGroup();
+        Appearance sphereAp = new Appearance();
+        BufferedImage bgImg = null;
+        try {
+            bgImg = ImageIO.read(new File("src/FlowersMeadow.jpg"));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        TextureLoader txld = new TextureLoader(bgImg);
+        ImageComponent2D img2D = txld.getImage();
+        Texture2D tex = new Texture2D(Texture.BASE_LEVEL, Texture.RGBA, 
+                img2D.getWidth(), img2D.getHeight());
+        tex.setImage(0, img2D);
+        tex.setEnable(true);
+        tex.setMagFilter(Texture.BASE_LEVEL_LINEAR);
+        tex.setMinFilter(Texture.BASE_LEVEL_LINEAR);
+        sphereAp.setTexture(tex);
+        Sphere skybox = new Sphere(1.0f, 
+                Sphere.GENERATE_NORMALS_INWARD | 
+                Sphere.GENERATE_TEXTURE_COORDS, 
+                sphereAp);
+        background.addChild(skybox);
+        return background;
     }
 
     private Geometry createFloor() {
@@ -219,15 +262,15 @@ public class MazeGame extends JFrame implements KeyListener {
         
         // indices
         int[] inds = {
-        		0, 1, 2, 3, //bottom
-        		0, 1, 5, 4, // front face
-        		1, 5, 6, 2, // left
-        		2, 6, 7, 3, // back side
-        		3, 7, 4, 0, // right 
-        		4, 5, 6, 7 // top
+                0, 1, 2, 3, //bottom
+                0, 1, 5, 4, // front face
+                1, 5, 6, 2, // left
+                2, 6, 7, 3, // back side
+                3, 7, 4, 0, // right 
+                4, 5, 6, 7 // top
         };
         
-        // create texture mapping
+        // create texture mapping on image
         TexCoord2f[] texCoords = new TexCoord2f[8];
         // regular mapping
         texCoords[0] = new TexCoord2f(0.0f, 0.0f); 
@@ -242,12 +285,12 @@ public class MazeGame extends JFrame implements KeyListener {
         
         // map texture to correct side of shape (also not sure why its not working)
         int[] texInds = {
-        		0, 1, 2, 3,
-        		4, 5, 6, 7,
-        	    4, 5, 6, 7,
-        	    4, 5, 6, 7,
-        	    4, 5, 6, 7,
-        	    0, 1, 2, 3
+                0, 1, 2, 3,
+                4, 5, 6, 7,
+                4, 5, 6, 7,
+                4, 5, 6, 7,
+                4, 5, 6, 7,
+                0, 1, 2, 3
         };
         
         GeometryInfo gi = new GeometryInfo(GeometryInfo.QUAD_ARRAY);
@@ -268,7 +311,7 @@ public class MazeGame extends JFrame implements KeyListener {
         URL filename = 
             getClass().getResource("cobblestone1.jpeg");
         if (filename == null) { 
-        	System.out.println("Texture file not found!"); return ap; // Return an empty appearance to avoid further errors
+            System.out.println("Texture file not found!"); return ap; // Return an empty appearance to avoid further errors
         }
         TextureLoader loader = new TextureLoader(filename, this);
         ImageComponent2D image = loader.getImage();
@@ -287,113 +330,169 @@ public class MazeGame extends JFrame implements KeyListener {
     }
     
     public Geometry createMaze() {
-    	float baseY = y+h;
-    	float cellSize = w*2/mapLayout[0].length;
-    	float mazeX = -w;
-    	float mazeZ = -w;
-    	float mazeH = 1.5f;
-    	
-    	int wallCount = 0;
-    	
-    	for (int i = 0; i < mapLayout.length; i++) {
-    		for (int j = 0; j < mapLayout[0].length; j++) {
-    			if (mapLayout[i][j] == 1) {
-    				wallCount++;
-    			}
-    		}
-    	}
-    	
+        float baseY = y+h;
+        float cellSize = w*2/mapLayout[0].length;
+        float mazeX = -w;
+        float mazeZ = -w;
+        float mazeH = 1.5f;
+        
+        int wallCount = 0;
+        
+        for (int i = 0; i < mapLayout.length; i++) {
+            for (int j = 0; j < mapLayout[0].length; j++) {
+                if (mapLayout[i][j] == 1) {
+                    wallCount++;
+                }
+            }
+        }
+        
         Point3f[] verts = new Point3f[wallCount * 8];
         int count = 0;
         for (int row = 0; row < mapLayout.length; row++) {
-    		for (int col = 0; col < mapLayout[row].length; col++) {
-    			if (mapLayout[row][col] == 1) {
-//    				verts[count++] = new Point3f(mazeX, baseY, mazeZ); 
-//    		        verts[count++] = new Point3f(mazeX + mazeW, baseY, mazeZ);
-//    		        verts[count++] = new Point3f(mazeX + mazeW, baseY, mazeZ + mazeW);
-//    		        verts[count++] = new Point3f(mazeX, baseY, mazeZ + mazeW);
-//    		        verts[count++] = new Point3f(mazeX, baseY + mazeH, mazeZ); 
-//    		        verts[count++] = new Point3f(mazeX + mazeW, baseY + mazeH, mazeZ);
-//    		        verts[count++] = new Point3f(mazeX + mazeW, baseY + mazeH, mazeZ + mazeW);
-//    		        verts[count++] = new Point3f(mazeX, baseY + mazeH, mazeZ + mazeW);
-    		        
-    				verts[count++] = new Point3f(mazeX + cellSize, baseY, mazeZ); //0
-    		        verts[count++] = new Point3f(mazeX, baseY, mazeZ);  //1
-    		        verts[count++] = new Point3f(mazeX, baseY, mazeZ + cellSize); //2
-    		        verts[count++] = new Point3f(mazeX + cellSize, baseY, mazeZ + cellSize); //3
-    		        verts[count++] = new Point3f(mazeX + cellSize, baseY + mazeH, mazeZ); //4
-    		        verts[count++] = new Point3f(mazeX, baseY + mazeH, mazeZ); //5
-    		        verts[count++] = new Point3f(mazeX, baseY + mazeH, mazeZ + cellSize); //6
-    		        verts[count++] = new Point3f(mazeX + cellSize, baseY + mazeH, mazeZ + cellSize); //7
-    			}
-    			mazeX += cellSize;
-    		}
-    		mazeX = -w;
-    		mazeZ += cellSize;
-    	}
+            for (int col = 0; col < mapLayout[row].length; col++) {
+                if (mapLayout[row][col] == 1) {
+//                  verts[count++] = new Point3f(mazeX, baseY, mazeZ); 
+//                  verts[count++] = new Point3f(mazeX + mazeW, baseY, mazeZ);
+//                  verts[count++] = new Point3f(mazeX + mazeW, baseY, mazeZ + mazeW);
+//                  verts[count++] = new Point3f(mazeX, baseY, mazeZ + mazeW);
+//                  verts[count++] = new Point3f(mazeX, baseY + mazeH, mazeZ); 
+//                  verts[count++] = new Point3f(mazeX + mazeW, baseY + mazeH, mazeZ);
+//                  verts[count++] = new Point3f(mazeX + mazeW, baseY + mazeH, mazeZ + mazeW);
+//                  verts[count++] = new Point3f(mazeX, baseY + mazeH, mazeZ + mazeW);
+                    
+                    verts[count++] = new Point3f(mazeX + cellSize, baseY, mazeZ); //0
+                    verts[count++] = new Point3f(mazeX, baseY, mazeZ);  //1
+                    verts[count++] = new Point3f(mazeX, baseY, mazeZ + cellSize); //2
+                    verts[count++] = new Point3f(mazeX + cellSize, baseY, mazeZ + cellSize); //3
+                    verts[count++] = new Point3f(mazeX + cellSize, baseY + mazeH, mazeZ); //4
+                    verts[count++] = new Point3f(mazeX, baseY + mazeH, mazeZ); //5
+                    verts[count++] = new Point3f(mazeX, baseY + mazeH, mazeZ + cellSize); //6
+                    verts[count++] = new Point3f(mazeX + cellSize, baseY + mazeH, mazeZ + cellSize); //7
+                }
+                mazeX += cellSize;
+            }
+            mazeX = -w;
+            mazeZ += cellSize;
+        }
         
         System.out.println(Arrays.toString(verts));
-        
-        // indices
-//        int[] inds = {
-//        		0, 1, 2, 3, //bottom
-//        		0, 1, 5, 4, // front face
-//        		1, 5, 6, 2, // left
-//        		2, 6, 7, 3, // back side
-//        		3, 7, 4, 0, // right 
-//        		4, 5, 6, 7 // top
-//        };
         
         ArrayList<Integer> indsList = new ArrayList<>();
         count = 0;
         for (int i = 0; i < wallCount; i++) {
-    		indsList.addAll(Arrays.asList(count, count + 1, count + 2, count + 3)); 
-    		indsList.addAll(Arrays.asList(count, count + 1, count + 5, count + 4));
-    		indsList.addAll(Arrays.asList(count + 1, count + 5, count + 6, count + 2));
-    		indsList.addAll(Arrays.asList(count + 2, count + 6, count + 7, count + 3));
-    		indsList.addAll(Arrays.asList(count + 3, count + 7, count + 4, count));
-    		indsList.addAll(Arrays.asList(count + 4, count + 5, count + 6, count + 7));
-    		
-    		count += 8;
-    	}
+            indsList.addAll(Arrays.asList(count, count + 1, count + 2, count + 3)); //bottom
+            indsList.addAll(Arrays.asList(count, count + 1, count + 5, count + 4)); // front face
+            indsList.addAll(Arrays.asList(count + 1, count + 5, count + 6, count + 2)); // left face
+            indsList.addAll(Arrays.asList(count + 2, count + 6, count + 7, count + 3)); // back face
+            indsList.addAll(Arrays.asList(count + 3, count + 7, count + 4, count)); // right faec
+            indsList.addAll(Arrays.asList(count + 4, count + 5, count + 6, count + 7)); // top
+             
+            count += 8;
+        }
         System.out.println(indsList.size());
                 
         int[] inds = new int[indsList.size()];
-	    int i = 0;
-	    for (Integer num : indsList) {
-	    	inds[i++] = num;
-	    }
-	    
-	    System.out.println(Arrays.toString(inds));
+        int index = 0;
+        for (Integer num : indsList) {
+            inds[index++] = num;
+        }
+        
+        System.out.println(Arrays.toString(inds));
+        
+        // create texture mapping on image
+        ArrayList<TexCoord2f> texCoordsList = new ArrayList<>();
+        for (int i = 0; i < wallCount; i++) {
+//            for (int j = 0; j < 6; j++) { 
+                texCoordsList.add(new TexCoord2f(0.0f, 0.0f));
+                texCoordsList.add(new TexCoord2f(1.0f, 0.0f));
+                texCoordsList.add(new TexCoord2f(1.0f, 1.0f));
+                texCoordsList.add(new TexCoord2f(0.0f, 1.0f));
+                texCoordsList.add(new TexCoord2f(0.0f, 0.0f));
+                texCoordsList.add(new TexCoord2f(1.0f, 0.0f));
+                texCoordsList.add(new TexCoord2f(1.0f, 1.0f));
+                texCoordsList.add(new TexCoord2f(0.0f, 1.0f));
+//            }
+        }
+
+//        TexCoord2f[] texCoords = texCoordsList.toArray(new TexCoord2f[0]);
+        TexCoord2f[] texCoords = new TexCoord2f[texCoordsList.size()];
+        
+//        int[] inds = new int[indsList.size()];
+        index = 0;
+        for (TexCoord2f coord : texCoordsList) {
+        	texCoords[index++] = coord;
+        }
+        
+        System.out.println("texture coordinates: " + Arrays.toString(texCoords));
+
+        int[] texIndsPerStructure = {
+        		1,0,3,2, // maps to bottom of the rectangular prism
+        		1,0,3,2, // maps to front face
+        		1,2,3,0, // maps to left
+        		1,2,3,0, // back face
+        		1,2,3,0, // right
+        		1,0,3,2 // top
+        };
+        
+        // Create texture indices
+        int[] texInds = new int[wallCount * 24];
+        index = 0;
+        for (int i = 0; i < wallCount; i++) {
+            for (int j = 0; j < texIndsPerStructure.length; j++) {
+            	texInds[index++] = texIndsPerStructure[j];
+            }
+
+        }
+        
+        System.out.println("texInds count: " + texInds.length);
+        System.out.println("texInds: " + Arrays.toString(texInds));
         
         GeometryInfo gi = new GeometryInfo(GeometryInfo.QUAD_ARRAY);
         gi.setCoordinates(verts);
         gi.setCoordinateIndices(inds);
-//        gi.setTextureCoordinateParams(1, 2);
-//        gi.setTextureCoordinates(0, texCoords); 
-//        gi.setTextureCoordinateIndices(0, texInds);
+        gi.setTextureCoordinateParams(1, 2);
+        gi.setTextureCoordinates(0, texCoords); 
+        gi.setTextureCoordinateIndices(0, texInds);
         NormalGenerator ng = new NormalGenerator();
         ng.generateNormals(gi);
         return gi.getGeometryArray();
     }
     
     private Appearance createWallAppearance() {
-        Appearance appearance = new Appearance();
-
+        Appearance ap = new Appearance();
+        URL filename = 
+            getClass().getResource("wallpaper.jpeg");
+        if (filename == null) { 
+            System.out.println("Texture file not found!"); 
+            return ap; // Return an empty appearance to avoid further errors
+        }
+        TextureLoader loader = new TextureLoader(filename, this);
+        ImageComponent2D image = loader.getImage();
+        if(image == null) {
+          System.out.println("can't find texture file.");
+        }
+        System.out.println("Texture file found at: " + filename);
+        Texture2D texture = new Texture2D(Texture.BASE_LEVEL, Texture.RGBA,
+        image.getWidth(), image.getHeight());
+        texture.setImage(0, image);
+        texture.setEnable(true);
+        texture.setMagFilter(Texture.BASE_LEVEL_LINEAR);
+        texture.setMinFilter(Texture.BASE_LEVEL_LINEAR);
+        ap.setTexture(texture);
 
         // Configure polygon attributes to render both sides
         PolygonAttributes polyAttr = new PolygonAttributes();
         polyAttr.setCullFace(PolygonAttributes.CULL_NONE); // Render both sides
-        appearance.setPolygonAttributes(polyAttr);
+        ap.setPolygonAttributes(polyAttr);
 
-        return appearance;
+        return ap;
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
-    	int key = e.getKeyCode();
-    	
-    	Transform3D currentTransform = new Transform3D();
+        int key = e.getKeyCode();
+        
+        Transform3D currentTransform = new Transform3D();
         su.getViewingPlatform().getViewPlatformTransform().getTransform(currentTransform);
 
         // Extract the translation vector (position)
@@ -409,72 +508,74 @@ public class MazeGame extends JFrame implements KeyListener {
         // Convert to Point3d
         Point3d cameraPosition = new Point3d(translation.x, translation.y, translation.z);
         Point3d cameraOrientation = new Point3d(forward.x, forward.y, forward.z);
-    	
-    	switch(key) {
-    	case KeyEvent.VK_UP:
-    		// change z position (forward)
-    		cameraPosition.z += 0.5;
-    		break;
-    	case KeyEvent.VK_DOWN:
-    		cameraPosition.z -= 0.5;
-    		break;
-    	case KeyEvent.VK_RIGHT:
-    		cameraPosition.x -= 0.5;
-    		break;
-    	case KeyEvent.VK_LEFT:
-    		cameraPosition.x += 0.5;
-    		break;
-    	}
+        
+        switch(key) {
+        case KeyEvent.VK_UP:
+            // change z position (forward)
+            cameraPosition.z += 0.5;
+            customizeView(cameraPosition, new Point3d(0,0,1000), new Vector3d(0,1,0));
+            break;
+        case KeyEvent.VK_DOWN:
+            cameraPosition.z -= 0.5;
+            break;
+        case KeyEvent.VK_RIGHT:
+            cameraPosition.x -= 0.5;
+            break;
+        case KeyEvent.VK_LEFT:
+            cameraPosition.x += 0.5;
+            break;
+        }
 
-    	// I added cameraPosition to the "look" so we are looking in the correct x direction when we move left or right
-//    	customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
-    	
-    	if (isWalkable(cameraPosition.x, cameraPosition.z)) {
-    		customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
-    	}
+        // I added cameraPosition to the "look" so we are looking in the correct x direction when we move left or right
+//      customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
+        
+        if (isWalkable(cameraPosition.x, cameraPosition.z)) {
+            customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
+        }
 
-    	
-//    	System.out.println("new Camera Position: " + cameraPosition);
-//    	System.out.println("new Camera orientation: " + cameraOrientation);
-    	
+        
+//      System.out.println("new Camera Position: " + cameraPosition);
+//      System.out.println("new Camera orientation: " + cameraOrientation);
+        
         orbit.setRotationCenter(cameraPosition);
 
     }
 
-	@Override
-	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void keyTyped(KeyEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
 
 
-	@Override
-	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	// collision detection
-	private boolean isWalkable(double x, double z) {
-	    // calculate  grid size
-	    double cellSize = (w * 2) / mapLayout[0].length;
+    @Override
+    public void keyReleased(KeyEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+    
+    // collision detection
+    private boolean isWalkable(double x, double z) {
+        // calculate  grid size
+        double cellSize = (w * 2) / mapLayout[0].length;
 
-	    // Translate world coordinates to grid indices
-	    int col = (int) Math.floor((x + w) / cellSize);
-	    int row = (int) Math.floor((z + w) / cellSize);
-	    
-	    System.out.println("x " + x);
-	    System.out.println("z " + z);
-	    System.out.println("row " + row);
-	    System.out.println("col " + col);
+        // Translate world coordinates to grid indices
+        int col = (int) Math.floor((x + w) / cellSize);
+        int row = (int) Math.floor((z + w) / cellSize);
+        
+        System.out.println("x " + x);
+        System.out.println("z " + z);
+        System.out.println("row " + row);
+        System.out.println("col " + col);
 
-	    // Check bounds
-	    if (row < 0 || row >= mapLayout.length || col < 0 || col >= mapLayout[0].length) {
-	        return false;
-	    }
+        // Check bounds
+        if (row < 0 || row >= mapLayout.length || col < 0 || col >= mapLayout[0].length) {
+            return false;
+        }
 
-	    // Return if the cell is walkable
-	    return mapLayout[row][col] == 0;
-	}
+        // Return if the cell is walkable
+        return mapLayout[row][col] == 0;
+    }
 
 }
+
