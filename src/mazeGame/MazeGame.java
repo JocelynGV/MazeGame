@@ -73,7 +73,7 @@ public class MazeGame extends JFrame implements KeyListener {
 	            {1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1},
 	            {1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 	            {1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-	            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9},
+	            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 	    };
 	
@@ -126,7 +126,7 @@ public class MazeGame extends JFrame implements KeyListener {
 
 	    su.getViewingPlatform().getViewPlatformTransform().setTransform(trans);
 
-	    View view = su.getViewer().getView();
+//	    View view = su.getViewer().getView();
 //	    view.setBackClipDistance(100.0); 
 	}
 
@@ -215,7 +215,6 @@ public class MazeGame extends JFrame implements KeyListener {
 		try {
 			bgImg = ImageIO.read(new File("src/FlowersMeadow.jpg"));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		TextureLoader txld = new TextureLoader(bgImg);
@@ -409,12 +408,29 @@ public class MazeGame extends JFrame implements KeyListener {
     private Appearance createWallAppearance() {
         Appearance appearance = new Appearance();
 
+        //tried to put an image on the walls, but it was too zoomed in
+//        BufferedImage bgImg = null;
+//		try {
+//			bgImg = ImageIO.read(new File("src/NevadaMountains.jpg"));
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//		TextureLoader txld = new TextureLoader(bgImg);
+//		ImageComponent2D img2D = txld.getImage();
+//		Texture2D tex = new Texture2D(Texture.BASE_LEVEL, Texture.RGBA, 
+//				img2D.getWidth(), img2D.getHeight());
+//		tex.setImage(0, img2D);
+//		tex.setEnable(true);
+//		tex.setMagFilter(Texture.BASE_LEVEL_LINEAR);
+//		tex.setMinFilter(Texture.BASE_LEVEL_LINEAR);
+//        appearance.setTexture(tex);
+        appearance.setMaterial(new Material());
 
         // Configure polygon attributes to render both sides
         PolygonAttributes polyAttr = new PolygonAttributes();
         polyAttr.setCullFace(PolygonAttributes.CULL_NONE); // Render both sides
         appearance.setPolygonAttributes(polyAttr);
-
+        
         return appearance;
 
     }
