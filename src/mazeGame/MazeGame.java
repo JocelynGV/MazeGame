@@ -82,7 +82,7 @@ public class MazeGame extends JFrame implements KeyListener {
 	            {1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1},
 	            {1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 	            {1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-	            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9},
 	            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 	    };
 
@@ -177,8 +177,6 @@ public class MazeGame extends JFrame implements KeyListener {
 //      view.setBackClipDistance(100.0); 
     }
 
-
-
     public BranchGroup createSceneGraph() {
         BranchGroup root = new BranchGroup();
         TransformGroup spin = new TransformGroup();
@@ -263,6 +261,7 @@ public class MazeGame extends JFrame implements KeyListener {
 		try {
 			bgImg = ImageIO.read(new File("src/FlowersMeadow.jpg"));
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		TextureLoader txld = new TextureLoader(bgImg);
@@ -492,7 +491,6 @@ public class MazeGame extends JFrame implements KeyListener {
     }
     
     private Appearance createWallAppearance() {
-
         Appearance ap = new Appearance();
         URL filename = 
             getClass().getResource("wallpaper.jpeg");
@@ -514,11 +512,9 @@ public class MazeGame extends JFrame implements KeyListener {
         texture.setMinFilter(Texture.BASE_LEVEL_LINEAR);
         ap.setTexture(texture);
 
-
         // Configure polygon attributes to render both sides
         PolygonAttributes polyAttr = new PolygonAttributes();
         polyAttr.setCullFace(PolygonAttributes.CULL_NONE); // Render both sides
-
         ap.setPolygonAttributes(polyAttr);
 
         return ap;
