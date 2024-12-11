@@ -3,9 +3,12 @@ package mazeGame;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GraphicsConfiguration;
-
 import java.awt.TextArea;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
@@ -36,8 +39,13 @@ import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.media.j3d.View;
 import javax.media.j3d.ViewPlatform;
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Color3f;
+import javax.vecmath.Matrix3d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Point3f;
 import javax.vecmath.TexCoord2f;
@@ -46,9 +54,9 @@ import javax.vecmath.Vector3d;
 import com.sun.j3d.utils.behaviors.vp.OrbitBehavior;
 import com.sun.j3d.utils.geometry.GeometryInfo;
 import com.sun.j3d.utils.geometry.NormalGenerator;
-import com.sun.j3d.utils.universe.SimpleUniverse;
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.image.TextureLoader;
+import com.sun.j3d.utils.universe.SimpleUniverse;
 
 public class MazeGame extends JFrame implements KeyListener {
 	Canvas3D c3d;
@@ -77,10 +85,7 @@ public class MazeGame extends JFrame implements KeyListener {
 	            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9},
 	            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 	    };
-	
-	int currCol = 1, currRow = 1;
 
-    
     public static void main(String[] args) {
         System.setProperty("sun.awt.noerasebackground", "true");
         JFrame frame = new MazeGame();
@@ -95,14 +100,37 @@ public class MazeGame extends JFrame implements KeyListener {
         GraphicsConfiguration gc = SimpleUniverse.getPreferredConfiguration();
         c3d = new Canvas3D(gc);
         cp.add(c3d, BorderLayout.CENTER);
+        
+        // create jPanel to hold the button and text area
+        JPanel bottomPanel = new JPanel();
+        
+        // create restart button
+        JButton restartBtn = new JButton("Restart");
+        restartBtn.setPreferredSize(new Dimension(100, 30)); // Set button size
+        restartBtn.setFocusPainted(false);
+        restartBtn.setFont(new Font("Arial", Font.BOLD, 12));
+        restartBtn.addActionListener(new ActionListener(){  
+        	public void actionPerformed(ActionEvent e){  
+            	customizeView(new Point3d (17.0,0,-17.0), new Point3d (7,0,1000), new Vector3d (0,1,0));
+            	//recenter orbit
+                orbit.setRotationCenter(new Point3d (17.0,0,-17.0));
+
+            }  
+        });  
+        
+        bottomPanel.add(restartBtn, BorderLayout.EAST);
 
         // add game Instructions
         TextArea ta = new TextArea("",3,30,TextArea.SCROLLBARS_NONE);
         ta.setText("UP and DOWN arrows to move forward and backward\n");
         ta.append("LEFT and RIGHT arrows to move left and right\n");
         ta.append("Drag mouse to look around");
+//        ta.setBounds(200, 300, 100, 100);
         ta.setEditable(false);
-        add(ta, BorderLayout.SOUTH);
+        bottomPanel.add(ta, BorderLayout.CENTER);
+        
+        //add jpanel to JFrame
+        add(bottomPanel, BorderLayout.SOUTH);
 
         su = new SimpleUniverse(c3d);
 //        su.getViewingPlatform().setNominalViewingTransform();
@@ -194,7 +222,7 @@ public class MazeGame extends JFrame implements KeyListener {
         System.out.println(orbit.getTranslateEnable());
         orbit.setZoomEnable(false);
         orbit.setRotYFactor(0);
-        orbit.setRotXFactor(.5);
+        orbit.setRotXFactor(0.35);
         
         Transform3D currentTransform = new Transform3D();
         su.getViewingPlatform().getViewPlatformTransform().getTransform(currentTransform);
@@ -313,7 +341,7 @@ public class MazeGame extends JFrame implements KeyListener {
     Appearance createFloorTextureAppearance(){    
         Appearance ap = new Appearance();
         URL filename = 
-            getClass().getResource("cobblestone1.jpeg");
+            getClass().getResource("carpet3.jpg");
         if (filename == null) { 
             System.out.println("Texture file not found!"); return ap; // Return an empty appearance to avoid further errors
         }
@@ -496,53 +524,82 @@ public class MazeGame extends JFrame implements KeyListener {
     public void keyPressed(KeyEvent e) {
         int key = e.getKeyCode();
         
-        Transform3D currentTransform = new Transform3D();
-        su.getViewingPlatform().getViewPlatformTransform().getTransform(currentTransform);
+//        Transform3D currentTransform = new Transform3D();
+//        su.getViewingPlatform().getViewPlatformTransform().getTransform(currentTransform);
 
-        // Extract the translation vector (position)
+        TransformGroup viewTG = orbit.getViewingPlatform().getMultiTransformGroup().getTransformGroup(0);
+        Transform3D transform = new Transform3D();
+        viewTG.getTransform(transform);
+        //get position
         Vector3d translation = new Vector3d();
-
-        Vector3d rotation = new Vector3d();
+        transform.get(translation);
         
-        currentTransform.get(translation);
-        currentTransform.get(rotation);
+        // get rotation matrix
+        Matrix3d rotationMatrix = new Matrix3d();
+        transform.get(rotationMatrix);
+        System.out.println("Rotation matrix: " + rotationMatrix);
         
-        Vector3d forward = new Vector3d(0.0, 0.0, -1.0); // Initially pointing along the negative z-axis
-        currentTransform.transform(forward);
-
+        // perform the matrix transform to get the 'looking' vector
+        Vector3d newForward = new Vector3d(0.0, 0.0, -1.0); // Default forward
+        rotationMatrix.transform(newForward);
+        System.out.println("newForward: " + newForward);
+        
         // Convert to Point3d
-        Point3d cameraPosition = new Point3d(translation.x, translation.y, translation.z);
-        Point3d cameraOrientation = new Point3d(forward.x, forward.y, forward.z);
+//        Point3d cameraPosition = new Point3d(translation.x, translation.y, translation.z);
+        
+        double tan = newForward.x / newForward.z;
+    	double relativeTheta = Math.atan(tan);
+    	double rotTheta = 0.0;
+    	System.out.println("tan " + tan);
+    	System.out.println("theta " + relativeTheta);
+    	
+    	double rot = Math.PI / 45;
         
         switch(key) {
         case KeyEvent.VK_UP:
-            // change z position (forward)
-            cameraPosition.z += 0.5;
-            customizeView(cameraPosition, new Point3d(0,0,1000), new Vector3d(0,1,0));
+//            cameraPosition.z += 0.5;
+         // Move forward by scaling the forward vector
+        	translation.x += newForward.x * .5;
+        	translation.y += newForward.y * .5;
+        	translation.z += newForward.z * .5;
             break;
         case KeyEvent.VK_DOWN:
-            cameraPosition.z -= 0.5;
+//            cameraPosition.z -= 0.5;
+            translation.x += -newForward.x * .5;
+        	translation.y += -newForward.y * .5;
+        	translation.z += -newForward.z * .5;
             break;
         case KeyEvent.VK_RIGHT:
-            cameraPosition.x -= 0.5;
+//            cameraPosition.x -= 0.5;
+        	
+        	// turn relative angle to absolute angle
+        	rotTheta = getTheta(relativeTheta, newForward);
+        	// add rotation
+        	rotTheta -= rot;
+            transform.setRotation(new AxisAngle4d(0, 1, 0, rotTheta));
             break;
         case KeyEvent.VK_LEFT:
-            cameraPosition.x += 0.5;
+//            cameraPosition.x += 0.5;
+        	
+        	rotTheta = getTheta(relativeTheta, newForward);
+        	// add rotation
+        	rotTheta += rot;
+            transform.setRotation(new AxisAngle4d(0, 1, 0, rotTheta));
+
             break;
         }
 
         // I added cameraPosition to the "look" so we are looking in the correct x direction when we move left or right
 //      customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
         
-        if (isWalkable(cameraPosition.x, cameraPosition.z)) {
-            customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
+        if (isWalkable(translation.x, translation.z)) {
+          transform.setTranslation(translation);
+          orbit.getViewingPlatform().getMultiTransformGroup().getTransformGroup(0).setTransform(transform);
         }
 
-    	
-//    	System.out.println("new Camera Position: " + cameraPosition);
-//    	System.out.println("new Camera orientation: " + cameraOrientation);
-    	
-        orbit.setRotationCenter(cameraPosition);
+        
+        // center the orbit at the new translated location
+        orbit.setRotationCenter(new Point3d(translation.x, translation.y, translation.z));
     }
 
     @Override
@@ -556,6 +613,24 @@ public class MazeGame extends JFrame implements KeyListener {
     public void keyReleased(KeyEvent e) {
         // TODO Auto-generated method stub
         
+    }
+    
+    private double getTheta(double relativeTheta, Vector3d forward) {
+    	double newTheta = 0.0;
+    	double rot = Math.PI/24;
+    	
+    	// quadrant "4" (assuming the z direction is at the top) 
+    	if (forward.x <= 0 && forward.z < 0) {
+    		newTheta = relativeTheta;
+    	} else if (forward.x <= 0 && forward.z > 0) { // quadrant "1" (honestly just look at my sketch to make sense of this)
+    		newTheta = Math.PI - Math.abs(relativeTheta);
+    	} else if (forward.x >= 0 && forward.z > 0) {
+    		newTheta = Math.PI + relativeTheta;
+    	} else {
+    		newTheta = (2 * Math.PI) - Math.abs(relativeTheta);
+    	}
+    	
+    	return newTheta;
     }
     
     // collision detection
@@ -572,8 +647,26 @@ public class MazeGame extends JFrame implements KeyListener {
         System.out.println("row " + row);
         System.out.println("col " + col);
 
-        // Check bounds
-        if (row < 0 || row >= mapLayout.length || col < 0 || col >= mapLayout[0].length) {
+        // Check bounds and victory
+        if (mapLayout[row][col] == 9) {
+        	int choice = JOptionPane.showOptionDialog(
+        	        this,
+        	        "Congratulations! You Win!\nWould you like to play again?",
+        	        "Victory",
+        	        JOptionPane.YES_NO_OPTION,
+        	        JOptionPane.INFORMATION_MESSAGE,
+        	        null,
+        	        new String[] {"Restart", "Exit"},
+        	        "Restart"
+        	    );
+
+        	    if (choice == JOptionPane.YES_OPTION) {
+        	        customizeView(new Point3d(17.0, 0, -17.0), new Point3d(7, 0, 1000), new Vector3d(0, 1, 0));
+                    orbit.setRotationCenter(new Point3d (17.0,0,-17.0));
+        	    } else if (choice == JOptionPane.NO_OPTION) {
+        	        System.exit(0); // Exit the application
+        	    }
+        } else if (row < 0 || row >= mapLayout.length || col < 0 || col >= mapLayout[0].length) {
             return false;
         }
 
