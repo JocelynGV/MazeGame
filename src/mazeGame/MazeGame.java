@@ -53,6 +53,8 @@ import javax.vecmath.Point3f;
 import javax.vecmath.TexCoord2f;
 import javax.vecmath.Vector3d;
 
+import javax.sound.sampled.*;
+
 import com.sun.j3d.utils.behaviors.vp.OrbitBehavior;
 import com.sun.j3d.utils.geometry.GeometryInfo;
 import com.sun.j3d.utils.geometry.NormalGenerator;
@@ -246,13 +248,9 @@ public class MazeGame extends JFrame implements KeyListener {
     private BranchGroup bgBranch() {
     	BranchGroup background = new BranchGroup();
     	Appearance sphereAp = new Appearance();
-        BufferedImage bgImg = null;
-		try {
-			bgImg = ImageIO.read(new File("src/FlowersMeadow.jpg"));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		TextureLoader txld = new TextureLoader(bgImg);
+    	
+        URL filename = getClass().getResource("sky.jpg");
+        TextureLoader txld = new TextureLoader(filename, this);
 		ImageComponent2D img2D = txld.getImage();
 		Texture2D tex = new Texture2D(Texture.BASE_LEVEL, Texture.RGBA, 
 				img2D.getWidth(), img2D.getHeight());
@@ -531,6 +529,8 @@ public class MazeGame extends JFrame implements KeyListener {
     	
     	// speed that the camera rotates to the left or right
     	double rot = Math.PI / 70;
+    	
+    	boolean step = false;
         
         switch(key) {
         case KeyEvent.VK_SHIFT:
@@ -539,15 +539,17 @@ public class MazeGame extends JFrame implements KeyListener {
         	break;
         case KeyEvent.VK_UP:
          // Move forward by scaling the forward vector
-        	translation.x += newForward.x * speed;
-        	translation.y += newForward.y * speed;
-        	translation.z += newForward.z * speed;
+        	translation.x += newForward.x * .5;
+        	translation.y += newForward.y * .5;
+        	translation.z += newForward.z * .5;
+        	step = true;
             break;
         case KeyEvent.VK_DOWN:
-        	// going backwards
-            translation.x += -newForward.x * speed;
-        	translation.y += -newForward.y * speed;
-        	translation.z += -newForward.z * speed;
+//            cameraPosition.z -= 0.5;
+            translation.x += -newForward.x * .5;
+        	translation.y += -newForward.y * .5;
+        	translation.z += -newForward.z * .5;
+        	step = true;
             break;
         case KeyEvent.VK_RIGHT:
         	// turn relative angle into absolute angle
@@ -566,13 +568,33 @@ public class MazeGame extends JFrame implements KeyListener {
             transform.setRotation(new AxisAngle4d(0, 1, 0, rotTheta));
             break;
         }
-
-        // this is where we check if there would be a collision, if there isnt then we move otherwise we do not
+      
+        //Walking audio
+        URL filename = getClass().getResource("footstep.wav");
+        Clip clip = null;
+		try {
+			clip = AudioSystem.getClip();
+			AudioInputStream ais = AudioSystem.getAudioInputStream(
+					filename);
+			clip.open(ais);
+		} catch (LineUnavailableException ex) {
+			ex.printStackTrace();
+		} catch (UnsupportedAudioFileException ex) {
+			ex.printStackTrace();
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+        
+        
         if (isWalkable(translation.x, translation.z)) {
-        	// perform translation
-        	transform.setTranslation(translation);
-        	// set the actual transition to the orbit
-        	orbit.getViewingPlatform().getMultiTransformGroup().getTransformGroup(0).setTransform(transform);
+          // this is where we check if there would be a collision, if there isnt then we move otherwise we do not
+          transform.setTranslation(translation);
+          // set the actual transition to the orbit
+          orbit.getViewingPlatform().getMultiTransformGroup().getTransformGroup(0).setTransform(transform);
+          if(step) {
+          	clip.start();
+          	step = false;
+          }
         }
         
         // center the orbit at the new translated location
