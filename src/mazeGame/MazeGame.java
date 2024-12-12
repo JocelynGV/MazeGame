@@ -32,6 +32,7 @@ import javax.media.j3d.PhysicalBody;
 import javax.media.j3d.PhysicalEnvironment;
 import javax.media.j3d.PointLight;
 import javax.media.j3d.PolygonAttributes;
+import javax.media.j3d.PositionInterpolator;
 import javax.media.j3d.Shape3D;
 import javax.media.j3d.Texture;
 import javax.media.j3d.Texture2D;
@@ -41,6 +42,7 @@ import javax.media.j3d.View;
 import javax.media.j3d.ViewPlatform;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.vecmath.AxisAngle4d;
@@ -59,12 +61,20 @@ import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 
 public class MazeGame extends JFrame implements KeyListener {
+	Container cp;
 	Canvas3D c3d;
 	SimpleUniverse su;
 	private TransformGroup viewTransformGroup;
 	OrbitBehavior orbit;
 	
+	// create jPanel to hold the button and text area
+    JPanel bottomPanel;
+	
+	// dimensions for floor and maze
 	float w = 20f, y = -0.75f, h = 0.1f;
+	
+	//speed for movement
+	float speed = 0.5f;
 	
 	 public static final int[][] mapLayout = {
 	            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -95,14 +105,14 @@ public class MazeGame extends JFrame implements KeyListener {
     }
 
     public MazeGame() {
-        Container cp = this.getContentPane();
+        cp = this.getContentPane();
         cp.setLayout(new BorderLayout());
         GraphicsConfiguration gc = SimpleUniverse.getPreferredConfiguration();
         c3d = new Canvas3D(gc);
         cp.add(c3d, BorderLayout.CENTER);
         
         // create jPanel to hold the button and text area
-        JPanel bottomPanel = new JPanel();
+        bottomPanel = new JPanel();
         
         // create restart button
         JButton restartBtn = new JButton("Restart");
@@ -112,6 +122,7 @@ public class MazeGame extends JFrame implements KeyListener {
         restartBtn.addActionListener(new ActionListener(){  
         	public void actionPerformed(ActionEvent e){  
             	customizeView(new Point3d (17.0,0,-17.0), new Point3d (7,0,1000), new Vector3d (0,1,0));
+            	// customizeView(new Point3d (15.0,0,10.0), new Point3d (7,0,1000), new Vector3d (0,1,0));
             	//recenter orbit
                 orbit.setRotationCenter(new Point3d (17.0,0,-17.0));
 
@@ -121,9 +132,10 @@ public class MazeGame extends JFrame implements KeyListener {
         bottomPanel.add(restartBtn, BorderLayout.EAST);
 
         // add game Instructions
-        TextArea ta = new TextArea("",3,30,TextArea.SCROLLBARS_NONE);
+        TextArea ta = new TextArea("",4,50,TextArea.SCROLLBARS_NONE);
         ta.setText("UP and DOWN arrows to move forward and backward\n");
-        ta.append("LEFT and RIGHT arrows to move left and right\n");
+        ta.append("LEFT and RIGHT arrows to look around\n");
+        ta.append("SHIFT to sprint\n");
         ta.append("Drag mouse to look around");
 //        ta.setBounds(200, 300, 100, 100);
         ta.setEditable(false);
@@ -210,9 +222,13 @@ public class MazeGame extends JFrame implements KeyListener {
         
         Alpha alpha = new Alpha(-1, 10000);
 //        RotationInterpolator rotator = new RotationInterpolator(alpha, spin);
+//        PositionInterpolator translator = new PositionInterpolator(alpha, tg);
+//        root.addChild(translator);
         BoundingSphere bounds = new BoundingSphere();
         bounds.setRadius(100);
+//        translator.setSchedulingBounds(bounds);
 //        rotator.setSchedulingBounds(bounds);
+//        translator.setEnable(false);
 //        spin.addChild(rotator);
         
         // allow user to look around
@@ -343,7 +359,8 @@ public class MazeGame extends JFrame implements KeyListener {
         URL filename = 
             getClass().getResource("carpet3.jpg");
         if (filename == null) { 
-            System.out.println("Texture file not found!"); return ap; // Return an empty appearance to avoid further errors
+            System.out.println("Texture file not found!"); 
+            return ap; // Return an empty appearance to avoid further errors
         }
         TextureLoader loader = new TextureLoader(filename, this);
         ImageComponent2D image = loader.getImage();
@@ -553,21 +570,25 @@ public class MazeGame extends JFrame implements KeyListener {
     	System.out.println("tan " + tan);
     	System.out.println("theta " + relativeTheta);
     	
-    	double rot = Math.PI / 45;
+    	double rot = Math.PI / 70;
         
         switch(key) {
+        case KeyEvent.VK_SHIFT:
+        	// increase the speed at which the user moves when they hold shift
+        	speed = 1.0f;
+        	break;
         case KeyEvent.VK_UP:
 //            cameraPosition.z += 0.5;
          // Move forward by scaling the forward vector
-        	translation.x += newForward.x * .5;
-        	translation.y += newForward.y * .5;
-        	translation.z += newForward.z * .5;
+        	translation.x += newForward.x * speed;
+        	translation.y += newForward.y * speed;
+        	translation.z += newForward.z * speed;
             break;
         case KeyEvent.VK_DOWN:
 //            cameraPosition.z -= 0.5;
-            translation.x += -newForward.x * .5;
-        	translation.y += -newForward.y * .5;
-        	translation.z += -newForward.z * .5;
+            translation.x += -newForward.x * speed;
+        	translation.y += -newForward.y * speed;
+        	translation.z += -newForward.z * speed;
             break;
         case KeyEvent.VK_RIGHT:
 //            cameraPosition.x -= 0.5;
@@ -611,13 +632,18 @@ public class MazeGame extends JFrame implements KeyListener {
 
     @Override
     public void keyReleased(KeyEvent e) {
-        // TODO Auto-generated method stub
+        int key = e.getKeyCode();
         
+        switch (key) {
+        case KeyEvent.VK_SHIFT:
+        	// when the user releases the shift key they go back to moving at a regular speed;
+        	speed = 0.5f;
+        	break;
+        }
     }
     
     private double getTheta(double relativeTheta, Vector3d forward) {
     	double newTheta = 0.0;
-    	double rot = Math.PI/24;
     	
     	// quadrant "4" (assuming the z direction is at the top) 
     	if (forward.x <= 0 && forward.z < 0) {
@@ -649,6 +675,54 @@ public class MazeGame extends JFrame implements KeyListener {
 
         // Check bounds and victory
         if (mapLayout[row][col] == 9) {
+//        	cp.removeAll();
+//            cp.revalidate();
+//            cp.repaint();
+//            
+//        	JPanel endScreen = new JPanel();
+//        	
+//        	endScreen.setLayout(new BorderLayout());
+//
+//        	JLabel message = new JLabel("<html>Congratulations! You Win!<br>Would you like to play again?</html>", JLabel.CENTER);
+//            message.setFont(new Font("Arial", Font.BOLD, 18));
+//            endScreen.add(message, BorderLayout.CENTER);
+//            
+//            JPanel buttonPanel = new JPanel();
+//            JButton restartButton = new JButton("Restart");
+//            JButton exitButton = new JButton("Exit");
+//            
+//            buttonPanel.add(restartButton);
+//            buttonPanel.add(exitButton);
+//            endScreen.add(buttonPanel, BorderLayout.SOUTH);
+//            
+//            cp.add(endScreen, BorderLayout.CENTER);
+//            cp.revalidate();
+//            cp.repaint();
+//        
+//            
+//            restartButton.addActionListener(new ActionListener() {  
+//            	public void actionPerformed(ActionEvent e) {  
+//            		cp.removeAll();
+//                    cp.add(c3d, BorderLayout.CENTER);
+//                    cp.add(bottomPanel, BorderLayout.SOUTH);
+//                    cp.revalidate();
+//                    cp.repaint();
+//                    
+//                	customizeView(new Point3d (17.0,0,-17.0), new Point3d (7,0,1000), new Vector3d (0,1,0));
+//                	//recenter orbit
+//                    orbit.setRotationCenter(new Point3d (17.0,0,-17.0));
+//            	}
+//               });
+//            
+//            exitButton.addActionListener(new ActionListener() {  
+//            	public void actionPerformed(ActionEvent e){  
+//            		System.exit(0);
+//
+//                }  
+//            });
+//            
+//            cp.add(endScreen, BorderLayout.CENTER);
+        	
         	int choice = JOptionPane.showOptionDialog(
         	        this,
         	        "Congratulations! You Win!\nWould you like to play again?",
@@ -661,8 +735,8 @@ public class MazeGame extends JFrame implements KeyListener {
         	    );
 
         	    if (choice == JOptionPane.YES_OPTION) {
+        	    	orbit.setRotationCenter(new Point3d (17.0,0,-17.0));
         	        customizeView(new Point3d(17.0, 0, -17.0), new Point3d(7, 0, 1000), new Vector3d(0, 1, 0));
-                    orbit.setRotationCenter(new Point3d (17.0,0,-17.0));
         	    } else if (choice == JOptionPane.NO_OPTION) {
         	        System.exit(0); // Exit the application
         	    }
@@ -673,6 +747,5 @@ public class MazeGame extends JFrame implements KeyListener {
 	    // Return if the cell is walkable
 	    return mapLayout[row][col] == 0;
 	}
-
 }
 
