@@ -51,6 +51,8 @@ import javax.vecmath.Point3f;
 import javax.vecmath.TexCoord2f;
 import javax.vecmath.Vector3d;
 
+import javax.sound.sampled.*;
+
 import com.sun.j3d.utils.behaviors.vp.OrbitBehavior;
 import com.sun.j3d.utils.geometry.GeometryInfo;
 import com.sun.j3d.utils.geometry.NormalGenerator;
@@ -257,14 +259,9 @@ public class MazeGame extends JFrame implements KeyListener {
     private BranchGroup bgBranch() {
     	BranchGroup background = new BranchGroup();
     	Appearance sphereAp = new Appearance();
-        BufferedImage bgImg = null;
-		try {
-			bgImg = ImageIO.read(new File("src/FlowersMeadow.jpg"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		TextureLoader txld = new TextureLoader(bgImg);
+    	
+        URL filename = getClass().getResource("sky.jpg");
+        TextureLoader txld = new TextureLoader(filename, this);
 		ImageComponent2D img2D = txld.getImage();
 		Texture2D tex = new Texture2D(Texture.BASE_LEVEL, Texture.RGBA, 
 				img2D.getWidth(), img2D.getHeight());
@@ -554,6 +551,8 @@ public class MazeGame extends JFrame implements KeyListener {
     	System.out.println("theta " + relativeTheta);
     	
     	double rot = Math.PI / 45;
+    	
+    	boolean step = false;
         
         switch(key) {
         case KeyEvent.VK_UP:
@@ -562,12 +561,14 @@ public class MazeGame extends JFrame implements KeyListener {
         	translation.x += newForward.x * .5;
         	translation.y += newForward.y * .5;
         	translation.z += newForward.z * .5;
+        	step = true;
             break;
         case KeyEvent.VK_DOWN:
 //            cameraPosition.z -= 0.5;
             translation.x += -newForward.x * .5;
         	translation.y += -newForward.y * .5;
         	translation.z += -newForward.z * .5;
+        	step = true;
             break;
         case KeyEvent.VK_RIGHT:
 //            cameraPosition.x -= 0.5;
@@ -592,9 +593,31 @@ public class MazeGame extends JFrame implements KeyListener {
         // I added cameraPosition to the "look" so we are looking in the correct x direction when we move left or right
 //      customizeView(cameraPosition, new Point3d(cameraPosition.x,0,1000), new Vector3d(0,1,0));
         
+        //Walking audio
+        
+        URL filename = getClass().getResource("footstep.wav");
+        Clip clip = null;
+		try {
+			clip = AudioSystem.getClip();
+			AudioInputStream ais = AudioSystem.getAudioInputStream(
+					filename);
+			clip.open(ais);
+		} catch (LineUnavailableException ex) {
+			ex.printStackTrace();
+		} catch (UnsupportedAudioFileException ex) {
+			ex.printStackTrace();
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+        
+        
         if (isWalkable(translation.x, translation.z)) {
           transform.setTranslation(translation);
           orbit.getViewingPlatform().getMultiTransformGroup().getTransformGroup(0).setTransform(transform);
+          if(step) {
+          	clip.start();
+          	step = false;
+          }
         }
 
         
