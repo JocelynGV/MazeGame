@@ -66,7 +66,6 @@ public class MazeGame extends JFrame implements KeyListener {
 	Container cp;
 	Canvas3D c3d;
 	SimpleUniverse su;
-	private TransformGroup viewTransformGroup;
 	OrbitBehavior orbit;
 	
 	// create jPanel to hold the button and text area
@@ -150,7 +149,6 @@ public class MazeGame extends JFrame implements KeyListener {
         
         // set initial custom view for when gameplay begins
     	customizeView(new Point3d (17.0,0,-17.0), new Point3d (7,0,1000), new Vector3d (0,1,0));
-        viewTransformGroup = su.getViewingPlatform().getViewPlatformTransform();
 
         c3d.addKeyListener(this);
         this.addKeyListener(this);
@@ -167,8 +165,6 @@ public class MazeGame extends JFrame implements KeyListener {
         trans.invert();
 
         su.getViewingPlatform().getViewPlatformTransform().setTransform(trans);
-
-        View view = su.getViewer().getView();
     }
 
     public BranchGroup createSceneGraph() {
@@ -205,9 +201,7 @@ public class MazeGame extends JFrame implements KeyListener {
         
         // allow user to look around but disable them from translation, zooming, or rotation on the y axis
         orbit = new OrbitBehavior(c3d);
-        System.out.println(orbit.getTranslateEnable());
         orbit.setTranslateEnable(false);
-        System.out.println(orbit.getTranslateEnable());
         orbit.setZoomEnable(false);
         orbit.setRotYFactor(0);
         orbit.setRotXFactor(0.35);
@@ -221,7 +215,6 @@ public class MazeGame extends JFrame implements KeyListener {
 
         // Convert to Point3d
         Point3d cameraPosition = new Point3d(translation.x, translation.y, translation.z);
-        System.out.println("Camera Position " + cameraPosition);
 
         // center the orbit rotation on the camera's current position
         orbit.setRotationCenter(cameraPosition);
@@ -338,7 +331,6 @@ public class MazeGame extends JFrame implements KeyListener {
         if(image == null) {
           System.out.println("can't find texture file.");
         }
-        System.out.println("Texture file found at: " + filename);
         Texture2D texture = new Texture2D(Texture.BASE_LEVEL, Texture.RGBA,
         image.getWidth(), image.getHeight());
         texture.setImage(0, image);
@@ -391,7 +383,6 @@ public class MazeGame extends JFrame implements KeyListener {
             mazeZ += cellSize;
         }
         
-//        System.out.println(Arrays.toString(verts));
         
         // create each face of each wall block (we're adding 24 indices per wall, 4 for the 6 faces)
         ArrayList<Integer> indsList = new ArrayList<>();
@@ -401,7 +392,7 @@ public class MazeGame extends JFrame implements KeyListener {
             indsList.addAll(Arrays.asList(count, count + 1, count + 5, count + 4)); // front face
             indsList.addAll(Arrays.asList(count + 1, count + 5, count + 6, count + 2)); // left face
             indsList.addAll(Arrays.asList(count + 2, count + 6, count + 7, count + 3)); // back face
-            indsList.addAll(Arrays.asList(count + 3, count + 7, count + 4, count)); // right faec
+            indsList.addAll(Arrays.asList(count + 3, count + 7, count + 4, count)); // right face
             indsList.addAll(Arrays.asList(count + 4, count + 5, count + 6, count + 7)); // top
              
             // move on to next wall
@@ -418,7 +409,6 @@ public class MazeGame extends JFrame implements KeyListener {
         // create texture mapping on image. Each wall gets it's own set of texture mapping to the image
         ArrayList<TexCoord2f> texCoordsList = new ArrayList<>();
         for (int i = 0; i < wallCount; i++) {
-//            for (int j = 0; j < 6; j++) { 
                 texCoordsList.add(new TexCoord2f(0.0f, 0.0f));
                 texCoordsList.add(new TexCoord2f(1.0f, 0.0f));
                 texCoordsList.add(new TexCoord2f(1.0f, 1.0f));
@@ -435,7 +425,6 @@ public class MazeGame extends JFrame implements KeyListener {
         for (TexCoord2f coord : texCoordsList) {
         	texCoords[index++] = coord;
         }
-//        System.out.println("texture coordinates: " + Arrays.toString(texCoords));
 
         // this is the pattern of texture mapping for each individual wall
         //The order of indices is important as that ensure that the correct texture coordinate is mapped to the correct coordinate on the shape
@@ -469,7 +458,7 @@ public class MazeGame extends JFrame implements KeyListener {
         return gi.getGeometryArray();
     }
     
-    // wall appearance to get the buffered image for teture mapping
+    // wall appearance to get the buffered image for texture mapping
     private Appearance createWallAppearance() {
         Appearance ap = new Appearance();
         URL filename = 
@@ -483,7 +472,6 @@ public class MazeGame extends JFrame implements KeyListener {
         if(image == null) {
           System.out.println("can't find texture file.");
         }
-        System.out.println("Texture file found at: " + filename);
         Texture2D texture = new Texture2D(Texture.BASE_LEVEL, Texture.RGBA,
         image.getWidth(), image.getHeight());
         texture.setImage(0, image);
@@ -545,7 +533,6 @@ public class MazeGame extends JFrame implements KeyListener {
         	step = true;
             break;
         case KeyEvent.VK_DOWN:
-//            cameraPosition.z -= 0.5;
             translation.x += -newForward.x * .5;
         	translation.y += -newForward.y * .5;
         	translation.z += -newForward.z * .5;
@@ -591,6 +578,7 @@ public class MazeGame extends JFrame implements KeyListener {
           transform.setTranslation(translation);
           // set the actual transition to the orbit
           orbit.getViewingPlatform().getMultiTransformGroup().getTransformGroup(0).setTransform(transform);
+          //play audio when step forward or backward is taken
           if(step) {
           	clip.start();
           	step = false;
@@ -600,12 +588,10 @@ public class MazeGame extends JFrame implements KeyListener {
         // center the orbit at the new translated location
         orbit.setRotationCenter(new Point3d(translation.x, translation.y, translation.z));
     }
+    
 
     @Override
-    public void keyTyped(KeyEvent e) {
-        // TODO Auto-generated method stub
-        
-    }
+    public void keyTyped(KeyEvent e) {}
 
 
     @Override
